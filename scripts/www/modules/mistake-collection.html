@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>错题册与智能斩杀中心</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .mistake-container { max-width: 900px; margin: 40px auto; padding: 0 20px; }
+        .back-nav { margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center; }
+        .back-link { text-decoration: none; color: var(--color-red); font-weight: 600; display: inline-flex; align-items: center; gap: 5px; }
+
+        .stat-banner { background: #fff; border: 1px solid var(--border-color); padding: 15px 25px; border-radius: var(--radius); display: flex; gap: 25px; margin-bottom: 30px; box-shadow: var(--shadow-sm); }
+        .stat-item { font-size: 0.9rem; font-weight: 500; color: var(--text-muted); }
+        .stat-item strong { font-size: 1.2rem; color: var(--text-main); margin-left: 5px; }
+
+        .mistake-list { display: flex; flex-direction: column; gap: 25px; }
+        .mistake-item-card { background: #fff; border: 1px solid var(--border-color); border-radius: var(--radius); padding: 25px; box-shadow: var(--shadow-sm); position: relative; transition: var(--transition); }
+
+        /* 三色遗忘分级背景状态机 */
+        .m-bg-red { background-color: rgba(220, 38, 38, 0.03) !important; border-left: 5px solid var(--color-red) !important; }
+        .m-bg-orange { background-color: rgba(234, 88, 12, 0.03) !important; border-left: 5px solid var(--color-orange) !important; }
+        .m-bg-yellow { background-color: rgba(2, 132, 199, 0.03) !important; border-left: 5px solid var(--color-blue) !important; }
+
+        .m-meta { display: flex; gap: 15px; font-size: 0.8rem; font-weight: 600; margin-bottom: 12px; }
+        .badge { padding: 2px 8px; border-radius: 4px; color: #fff; }
+        .badge-mc { background: var(--color-blue); }
+        .badge-tf { background: var(--color-green); }
+        .badge-sc { background: var(--color-orange); }
+        .badge-count { background: #64748b; }
+        .badge-streak { background: #14b8a6; }
+
+        .m-title { font-size: 1.15rem; font-weight: 700; color: var(--text-main); margin-bottom: 15px; line-height: 1.5; }
+
+        /* 选项布局 */
+        .m-options-box { display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px; }
+        .m-opt-btn { background: #fff; border: 1px solid var(--border-color); padding: 12px 18px; border-radius: 6px; cursor: pointer; text-align: left; font-size: 0.92rem; font-weight: 500; transition: var(--transition); display: flex; justify-content: space-between; align-items: center; }
+        .m-opt-btn:hover { background: #f8fafc; border-color: #cbd5e1; }
+
+        /* 判断题双键 */
+        .m-tf-box { display: flex; gap: 15px; margin-bottom: 15px; }
+        .m-tf-btn { flex: 1; padding: 12px; border: 1px solid var(--border-color); border-radius: 6px; font-weight: 700; cursor: pointer; background: #fff; transition: var(--transition); }
+        .m-tf-btn-t:hover { background: var(--color-green-light); border-color: var(--color-green); color: var(--color-green); }
+        .m-tf-btn-f:hover { background: var(--color-red-light); border-color: var(--color-red); color: var(--color-red); }
+
+        /* 句子合并 Anki 卡片交互区 */
+        .m-sc-背诵区 { display: flex; flex-direction: column; align-items: center; width: 100%; gap: 15px; margin-bottom: 15px; }
+        .m-sc-看答案按钮 { width: 100%; padding: 12px; background: #fff; border: 1px dashed var(--color-orange); color: var(--color-orange); border-radius: 6px; font-weight: 700; cursor: pointer; transition: var(--transition); text-align: center; }
+        .m-sc-看答案按钮:hover { background: var(--color-orange-light); }
+        .m-sc-自评组 { display: none; grid-template-columns: 1fr 1fr; gap: 15px; width: 100%; }
+        .m-sc-评键 { padding: 12px; border: none; border-radius: 6px; font-weight: 700; cursor: pointer; color: #fff; text-align: center; display: inline-flex; align-items: center; justify-content: center; gap: 6px; transition: var(--transition); }
+        .m-sc-键错 { background: var(--color-red); }
+        .m-sc-键错:hover { background: #b91c1c; }
+        .m-sc-键对 { background: var(--color-green); }
+        .m-sc-键对:hover { background: #15803d; }
+
+        /* 作答状态变色 */
+        .m-btn-correct { background-color: var(--color-green) !important; color: #fff !important; border-color: var(--color-green) !important; }
+        .m-btn-wrong { background-color: var(--color-red) !important; color: #fff !important; border-color: var(--color-red) !important; }
+        .m-btn-disabled { pointer-events: none; opacity: 0.5; }
+        .m-sc-评键.active-choice { opacity: 1 !important; transform: scale(0.98); box-shadow: inset 0 2px 4px rgba(0,0,0,0.15); }
+
+        /* 句子合并待合并区域 */
+        .m-raw-zone { background: rgba(0,0,0,0.02); border: 1px solid var(--border-color); padding: 12px 18px; border-radius: 6px; margin-bottom: 15px; font-family: monospace; font-size: 0.95rem; font-weight: bold; }
+
+        /* 右上角强制移除按钮 */
+        .kill-right-now-btn { position: absolute; top: 20px; right: 20px; background: transparent; border: none; color: var(--text-muted); cursor: pointer; font-size: 1.1rem; transition: var(--transition); }
+        .kill-right-now-btn:hover { color: var(--color-red); transform: scale(1.1); }
+
+        /* 统一的解析盒子 */
+        .m-panel-box { margin-top: 15px; padding: 15px; border-radius: 6px; background: #fff; border: 1px solid var(--border-color); display: none; line-height: 1.5; font-size: 0.9rem; }
+        .m-panel-hook { margin-top: 10px; font-size: 0.85rem; font-weight: 700; color: var(--color-orange); background: var(--color-orange-light); padding: 6px 12px; border-radius: 4px; border: 1px dashed #fdba74; }
+
+        .empty-ghost-state { text-align: center; padding: 60px 20px; color: var(--text-muted); }
+        .empty-ghost-state i { font-size: 3.5rem; margin-bottom: 15px; color: #cbd5e1; }
+    </style>
+</head>
+<body>
+
+    <div class="mistake-container">
+        <div class="back-nav">
+            <a href="../index.html" class="back-link"><i class="fa-solid fa-chevron-left"></i> 返回主控大盘</a>
+            <span style="font-size: 0.85rem; color: var(--text-muted);"><i class="fa-solid fa-circle-info"></i> 核心规则：任何错题连续答对 2 次即完成斩杀销题</span>
+        </div>
+
+        <div class="stat-banner">
+            <div class="stat-item">错题总数:<strong id="total-cnt" style="color:var(--text-main);">0</strong></div>
+            <div class="stat-item">🔴 顽固级别:<strong id="stubborn-cnt" style="color:var(--color-red);">0</strong></div>
+            <div class="stat-item">混合重度:<strong id="severe-cnt" style="color:var(--color-orange);">0</strong></div>
+            <div class="stat-item">🟡 轻度待消:<strong id="light-cnt" style="color:var(--color-blue);">0</strong></div>
+        </div>
+
+        <div class="mistake-list" id="mistake-list-container"></div>
+    </div>
+
+    <script src="../js/question-bank.js"></script>
+    <script src="../js/storage.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', initMistakeCenter);
+
+        function initMistakeCenter() {
+            renderStatistics();
+            renderMistakeCards();
+        }
+
+        function renderStatistics() {
+            const stats = StorageEngine.getMistakeStatistics();
+            document.getElementById('total-cnt').textContent = stats.total;
+            document.getElementById('stubborn-cnt').textContent = stats.stubborn;
+            document.getElementById('severe-cnt').textContent = stats.severe;
+            document.getElementById('light-cnt').textContent = stats.light;
+        }
+
+        function renderMistakeCards() {
+            const container = document.getElementById('mistake-list-container');
+            const mistakes = StorageEngine.getMistakes();
+
+            if (mistakes.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-ghost-state">
+                        <i class="fa-solid fa-face-smile-beam" style="color:var(--color-green);"></i>
+                        <h3>大快人心！当前没有任何错题记录</h3>
+                        <p style="font-size:0.85rem; margin-top:5px;">保持状态，期末考试稳拿高分！</p>
+                    </div>`;
+                return;
+            }
+
+            container.innerHTML = '';
+
+            mistakes.forEach(m => {
+                const card = document.createElement('div');
+                let bgClass = 'm-bg-yellow';
+                if (m.wrongCount >= 3) bgClass = 'm-bg-red';
+                else if (m.wrongCount === 2) bgClass = 'm-bg-orange';
+
+                card.className = `mistake-item-card ${bgClass}`;
+
+                let typeName = '', typeClass = '';
+                if (m.module === 'mc') { typeName = '单选题'; typeClass = 'badge-mc'; }
+                else if (m.module === 'tf') { typeName = '判断题'; typeClass = 'badge-tf'; }
+                else if (m.module === 'sc') { typeName = '句子合并'; typeClass = 'badge-sc'; }
+
+                card.innerHTML = `
+                    <button class="kill-right-now-btn" title="手动一键永久斩杀移除" onclick="forceKill('${m.module}', ${m.id})">
+                        <i class="fa-solid fa-skull-crossbones"></i>
+                    </button>
+                    <div class="m-meta">
+                        <span class="badge ${typeClass}">${typeName}</span>
+                        <span class="badge badge-count">反复错: ${m.wrongCount}次</span>
+                        <span class="badge badge-streak" id="streak-${m.module}-${m.id}">当前连对: ${m.streak}/2</span>
+                    </div>
+                    <div class="m-title">${m.module === 'tf' ? m.questionData.question : (m.module === 'mc' ? m.questionData.question : '请合并以下句群')}</div>
+
+                    <div class="interactive-zone"></div>
+
+                    <div class="m-panel-box">
+                        <div class="m-panel-trans"></div>
+                        <div class="m-panel-opts-trans" style="margin-top:8px; padding-top:8px; border-top:1px dashed var(--border-color); display:none;"></div>
+                        <div class="m-panel-hook"></div>
+                    </div>
+                `;
+
+                const interactiveZone = card.querySelector('.interactive-zone');
+                const panelBox = card.querySelector('.m-panel-box');
+                const panelTrans = card.querySelector('.m-panel-trans');
+                const panelOptsTrans = card.querySelector('.m-panel-opts-trans');
+                const panelHook = card.querySelector('.m-panel-hook');
+
+                // =========================================================
+                // 题型策略渲染状态机
+                // =========================================================
+                if (m.module === 'mc') {
+                    // --- 单选题：作答前锁死纯英文选项 ---
+                    const optionsBox = document.createElement('div');
+                    optionsBox.className = 'm-options-box';
+
+                    let shuffled = [...m.questionData.options].sort(() => Math.random() - 0.5);
+                    shuffled.forEach(opt => {
+                        const optBtn = document.createElement('button');
+                        optBtn.className = 'm-opt-btn';
+                        optBtn.innerHTML = `<span>${opt.text}</span> <i class="fa-regular fa-circle"></i>`;
+
+                        optBtn.onclick = () => {
+                            lockAndFeedbackMC(m, opt, optBtn, optionsBox, panelBox, panelTrans, panelOptsTrans, panelHook);
+                        };
+                        optionsBox.appendChild(optBtn);
+                    });
+                    interactiveZone.appendChild(optionsBox);
+
+                } else if (m.module === 'tf') {
+                    // --- 判断题：纯快刷双键 ---
+                    const tfBox = document.createElement('div');
+                    tfBox.className = 'm-tf-box';
+                    tfBox.innerHTML = `
+                        <button class="m-tf-btn m-tf-btn-t">TRUE (正确)</button>
+                        <button class="m-tf-btn m-tf-btn-f">FALSE (错误)</button>
+                    `;
+                    const btnT = tfBox.querySelector('.m-tf-btn-t');
+                    const btnF = tfBox.querySelector('.m-tf-btn-f');
+
+                    btnT.onclick = () => lockAndFeedbackTF(m, true, btnT, btnF, panelBox, panelTrans, panelHook);
+                    btnF.onclick = () => lockAndFeedbackTF(m, false, btnT, btnF, panelBox, panelTrans, panelHook);
+
+                    interactiveZone.appendChild(tfBox);
+
+                } else if (m.module === 'sc') {
+                    // --- 句子合并题：升级为与主舱完全同步的 Anki 卡片背诵流 ---
+                    const rawZone = document.createElement('div');
+                    rawZone.className = 'm-raw-zone';
+                    m.questionData.raw_sentences.forEach(s => {
+                        rawZone.innerHTML += `<div>• ${s}</div>`;
+                    });
+                    interactiveZone.appendChild(rawZone);
+
+                    const sc背诵区 = document.createElement('div');
+                    sc背诵区.className = 'm-sc-背诵区';
+                    sc背诵区.innerHTML = `
+                        <button class="m-sc-看答案按钮"><i class="fa-regular fa-eye"></i> 脑海中合并后，点击对比标准答案</button>
+                        <div class="m-sc-自评组">
+                            <button class="m-sc-评键 m-sc-键错"><i class="fa-solid fa-circle-xmark"></i> 不记得/构思错</button>
+                            <button class="m-sc-评键 m-sc-键对"><i class="fa-solid fa-circle-check"></i> 我记得/构思对</button>
+                        </div>
+                    `;
+
+                    const btnView = sc背诵区.querySelector('.m-sc-看答案按钮');
+                    const evalGroup = sc背诵区.querySelector('.m-sc-自评组');
+                    const btnWrong = sc背诵区.querySelector('.m-sc-键错');
+                    const btnRight = sc背诵区.querySelector('.m-sc-键对');
+
+                    btnView.onclick = () => {
+                        btnView.style.display = 'none';
+                        evalGroup.style.display = 'grid';
+
+                        // 展出标准答案多解与翻译
+                        let keysHtml = '';
+                        m.questionData.correct_answers.forEach((k, i) => {
+                            keysHtml += `<div style="font-family:monospace; font-weight:bold; color:#0f172a; margin-top:4px;">解法 ${i+1}: ${k}</div>`;
+                        });
+                        panelTrans.innerHTML = `<strong>中文翻译：</strong>${m.questionData.translation}<br><br><strong>官方满分解法：</strong>${keysHtml}`;
+                        panelHook.innerHTML = `<i class="fa-solid fa-key"></i> <strong>合并口诀：</strong>${m.questionData.hook}`;
+                        panelBox.style.display = 'block';
+                    };
+
+                    btnWrong.onclick = () => {
+                        freezeAnkiButtons(btnWrong, btnRight);
+                        btnWrong.classList.add('active-choice');
+                        triggerStreakEngine(m.module, m.id, false); // 判定为错，连对计数清零
+                    };
+
+                    btnRight.onclick = () => {
+                        freezeAnkiButtons(btnWrong, btnRight);
+                        btnRight.classList.add('active-choice');
+                        triggerStreakEngine(m.module, m.id, true);  // 判定为对，触发连对斩杀检查
+                    };
+
+                    interactiveZone.appendChild(sc背诵区);
+                }
+
+                container.appendChild(card);
+            });
+        }
+
+        // =========================================================
+        // 反馈处理器与智能斩杀机制联动
+        // =========================================================
+
+        function lockAndFeedbackMC(m, opt, selectedBtn, box, panel, trans, optsTrans, hook) {
+            freezeZone(box, 'm-opt-btn');
+            const btns = box.querySelectorAll('.m-opt-btn');
+
+            btns.forEach(btn => {
+                const pureText = btn.querySelector('span').textContent.trim();
+                const orig = m.questionData.options.find(o => o.text === pureText);
+                if (orig && orig.isCorrect) {
+                    btn.classList.add('m-btn-correct');
+                    btn.querySelector('i').className = 'fa-solid fa-circle-check';
+                }
+            });
+
+            if (!opt.isCorrect) {
+                selectedBtn.classList.add('m-btn-wrong');
+                selectedBtn.querySelector('i').className = 'fa-solid fa-circle-xmark';
+            }
+
+            triggerStreakEngine(m.module, m.id, opt.isCorrect);
+
+            // 选完展现题干全译
+            trans.innerHTML = `<strong>题干翻译：</strong>${m.questionData.question_zh}`;
+
+            // 选完展现选项全译
+            let optsTranslationHtml = `<strong>选项翻译：</strong><br>`;
+            m.questionData.options.forEach(o => {
+                optsTranslationHtml += `• ${o.text} ➔ <span style="color:var(--text-muted);">${o.text_zh}</span><br>`;
+            });
+            optsTrans.innerHTML = optsTranslationHtml;
+            optsTrans.style.display = 'block';
+
+            hook.innerHTML = `<i class="fa-solid fa-key"></i> <strong>秒杀技巧：</strong>${m.questionData.hook}`;
+            panel.style.display = 'block';
+        }
+
+        function lockAndFeedbackTF(m, userSelect, btnT, btnF, panel, trans, hook) {
+            btnT.classList.add('m-btn-disabled');
+            btnF.classList.add('m-btn-disabled');
+
+            if (m.questionData.isCorrect) {
+                btnT.classList.add('m-btn-correct');
+                if (!userSelect) btnF.classList.add('m-btn-wrong');
+            } else {
+                btnF.classList.add('m-btn-correct');
+                if (userSelect) btnT.classList.add('m-btn-wrong');
+            }
+
+            const isCorrect = (userSelect === m.questionData.isCorrect);
+            triggerStreakEngine(m.module, m.id, isCorrect);
+
+            // 选完展现涂卡映射与翻译
+            trans.innerHTML = `<strong>考场涂卡映射：</strong><span style="color:var(--color-orange);font-weight:bold;">${m.questionData.card_map}</span><br><br><strong>句意全译：</strong>${m.questionData.question_zh}`;
+            hook.innerHTML = `<i class="fa-solid fa-key"></i> <strong>秒杀技巧：</strong>${m.questionData.hook}`;
+            panel.style.display = 'block';
+        }
+
+        function triggerStreakEngine(moduleType, id, isCorrect) {
+            const res = StorageEngine.handleMistakeExercise(moduleType, id, isCorrect);
+            const streakNode = document.getElementById(`streak-${moduleType}-${id}`);
+
+            if (res.status === 'killed') {
+                if (streakNode) streakNode.textContent = `当前连对: 2/2`;
+                alert('【斩杀成功】该题目已连续答对 2 次，自动从错题册中销题抹除！');
+                initMistakeCenter(); // 完美重新渲染剩余错题和顶端统计大盘
+            } else {
+                if (streakNode) {
+                    streakNode.textContent = `当前连对: ${res.streak}/2`;
+                }
+                renderStatistics(); // 仅局部重刷数据大盘计数
+            }
+        }
+
+        window.forceKill = function(moduleType, id) {
+            if (confirm('确定要将该题直接移出历史错题册吗？')) {
+                StorageEngine.removeMistake(moduleType, id);
+                initMistakeCenter();
+            }
+        };
+
+        function freezeZone(container, className) {
+            container.querySelectorAll(`.${className}`).forEach(b => b.classList.add('m-btn-disabled'));
+        }
+
+        function freezeAnkiButtons(b1, b2) {
+            b1.classList.add('m-btn-disabled');
+            b2.classList.add('m-btn-disabled');
+        }
+    </script>
+</body>
+</html>
