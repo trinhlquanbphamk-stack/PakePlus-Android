@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>模块 III : 句子合并舱 (卡片背诵版)</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .exercise-container { max-width: 850px; margin: 40px auto; padding: 0 20px; }
+        .back-nav { margin-bottom: 20px; }
+        .back-link { text-decoration: none; color: var(--color-orange); font-weight: 600; display: inline-flex; align-items: center; gap: 5px; }
+        .question-box { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 30px; box-shadow: var(--shadow-sm); }
+        .q-header { display: flex; justify-content: space-between; color: var(--text-muted); font-size: 0.85rem; margin-bottom: 15px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; }
+
+        /* 拆分短句堆叠区 */
+        .raw-sentences-zone { background: var(--bg-main); border: 1px solid var(--border-color); padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+        .raw-sentences-zone h5 { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 10px; font-weight: 600; }
+        .sentence-li { font-family: "Courier New", Courier, monospace; font-size: 1.05rem; font-weight: 700; color: #0f172a; margin-bottom: 6px; padding-left: 15px; position: relative; }
+        .sentence-li::before { content: "•"; position: absolute; left: 0; color: var(--color-orange); }
+
+        .hint-alert-tag { background: #fff7ed; color: var(--color-orange); border: 1px solid #fed7aa; padding: 10px 15px; border-radius: 6px; font-size: 0.88rem; font-weight: 700; margin-bottom: 25px; display: flex; align-items: center; gap: 8px; }
+
+        /* 核心改动：大背诵卡片翻面控制区 */
+        .card-flip-control-zone { display: flex; flex-direction: column; align-items: center; margin: 30px 0 10px 0; gap: 20px; }
+        .view-answer-big-btn { width: 100%; padding: 15px; background: var(--bg-main); border: 2px dashed var(--color-orange); color: var(--color-orange); border-radius: 8px; font-size: 1.1rem; font-weight: 700; cursor: pointer; transition: var(--transition); text-align: center; }
+        .view-answer-big-btn:hover { background: var(--color-orange-light); }
+
+        /* 自评反馈双键区 */
+        .self-eval-box { display: none; grid-template-columns: 1fr 1fr; gap: 20px; width: 100%; }
+        .eval-btn { padding: 15px; border: none; border-radius: 8px; font-size: 1.1rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; transition: var(--transition); color: #fff; }
+        .btn-remember { background-color: var(--color-green); }
+        .btn-remember:hover { background-color: #15803d; }
+        .btn-forgot { background-color: var(--color-red); }
+        .btn-forgot:hover { background-color: #b91c1c; }
+
+        /* 冻结与高亮状态 */
+        .eval-btn.disabled { pointer-events: none; opacity: 0.4; }
+        .eval-btn.active-choice { transform: scale(0.98); box-shadow: inset 0 2px 4px rgba(0,0,0,0.2); opacity: 1 !important; }
+
+        /* 隐藏抽屉样式 */
+        .analysis-box { margin-top: 30px; background: #f8fafc; border-left: 4px solid var(--color-orange); padding: 20px; border-radius: 4px; display: none; }
+        .analysis-box h5 { color: var(--color-orange); font-size: 0.95rem; margin-bottom: 8px; }
+        .all-keys-box { background: #fff; border: 1px solid var(--border-color); padding: 12px; border-radius: 6px; font-family: "Courier New", Courier, monospace; font-size: 0.98rem; color: #0f172a; margin-top: 10px; line-height: 1.4; font-weight: bold; }
+
+        .action-bar { display: flex; justify-content: flex-end; margin-top: 25px; }
+        .btn-next { padding: 10px 24px; background: var(--color-orange); color: #fff; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; visibility: hidden; }
+        .btn-next:hover { background: #c2410c; }
+    </style>
+</head>
+<body>
+
+    <div class="exercise-container">
+        <div class="back-nav">
+            <a href="../index.html" class="back-link"><i class="fa-solid fa-chevron-left"></i> 返回主控大盘</a>
+        </div>
+
+        <div class="question-box">
+            <div class="q-header">
+                <span><i class="fa-solid fa-brain"></i> 课内长难句型 · 默写背诵舱</span>
+                <span id="q-index">题目 0 / 0</span>
+            </div>
+
+            <!-- 待合并的短句群 -->
+            <div class="raw-sentences-zone">
+                <h5>待合并的原拆分短句群：</h5>
+                <div id="raw-container"></div>
+            </div>
+
+            <!-- 限制条件提示牌 -->
+            <div class="hint-alert-tag" id="q-hint"></div>
+
+            <!-- 核心交互区：看答案与记得/不记得自评反馈系统 -->
+            <div class="card-flip-control-zone">
+                <button class="view-answer-big-btn" id="btn-view-answer"><i class="fa-regular fa-eye"></i> 在脑海中构思完后，点击查看标准答案</button>
+
+                <div class="self-eval-box" id="eval-container">
+                    <button class="eval-btn btn-forgot" id="btn-forgot"><i class="fa-solid fa-circle-xmark"></i> 不记得 / 构思错误</button>
+                    <button class="eval-btn btn-remember" id="btn-remember"><i class="fa-solid fa-circle-check"></i> 我记得 / 构思正确</button>
+                </div>
+            </div>
+
+            <!-- 点击看答案后才展开的官方方案 -->
+            <div class="analysis-box" id="analysis-container">
+                <h5><i class="fa-solid fa-circle-nodes"></i> 官方标准满分多解方案</h5>
+                <p style="font-size: 0.9rem; color: var(--text-muted);" id="analysis-zh"></p>
+                <div class="all-keys-box" id="all-keys-render"></div>
+                <p id="analysis-hook" style="margin-top:12px; font-size:0.88rem; color:#475569; border-top:1px solid var(--border-color); padding-top:10px;"></p>
+            </div>
+
+            <div class="action-bar">
+                <button class="btn-next" id="btn-next">下一题 <i class="fa-solid fa-chevron-right"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/question-bank.js"></script>
+    <script src="../js/storage.js"></script>
+    <script>
+        let currentIndex = 0;
+        let currentQuestion = null;
+        let hasEvaluated = false;
+        const totalQuestions = sentenceCombiningQuestions.length;
+
+        const indexNode = document.getElementById('q-index');
+        const rawContainer = document.getElementById('raw-container');
+        const hintNode = document.getElementById('q-hint');
+        const btnViewAnswer = document.getElementById('btn-view-answer');
+        const evalContainer = document.getElementById('eval-container');
+        const btnRemember = document.getElementById('btn-remember');
+        const btnForgot = document.getElementById('btn-forgot');
+        const analysisContainer = document.getElementById('analysis-container');
+        const zhNode = document.getElementById('analysis-zh');
+        const keysRender = document.getElementById('all-keys-render');
+        const hookNode = document.getElementById('analysis-hook');
+        const btnNext = document.getElementById('btn-next');
+
+        function loadQuestion() {
+            hasEvaluated = false;
+            btnNext.style.visibility = 'hidden';
+            analysisContainer.style.display = 'none';
+            evalContainer.style.display = 'none';
+            btnViewAnswer.style.display = 'block';
+
+            // 恢复评判按钮状态
+            btnRemember.className = 'eval-btn btn-remember';
+            btnForgot.className = 'eval-btn btn-forgot';
+
+            currentQuestion = sentenceCombiningQuestions[currentIndex];
+            indexNode.textContent = `题目 ${currentIndex + 1} / ${totalQuestions}`;
+            hintNode.innerHTML = `<i class="fa-solid fa-circle-exclamation"></i> <strong>核心限制条件：</strong>${currentQuestion.hint}`;
+
+            // 渲染原始短句
+            rawContainer.innerHTML = '';
+            currentQuestion.raw_sentences.forEach(sent => {
+                const sDiv = document.createElement('div');
+                sDiv.className = 'sentence-li';
+                sDiv.textContent = sent;
+                rawContainer.appendChild(sDiv);
+            });
+        }
+
+        // 步骤 1：点击看答案，展开标准 Key 细节和自评选项
+        btnViewAnswer.onclick = () => {
+            btnViewAnswer.style.display = 'none';
+            evalContainer.style.display = 'grid';
+
+            // 渲染标准多解方案和双语翻译
+            zhNode.innerHTML = `<strong>合并后中文全译：</strong>${currentQuestion.translation}`;
+            let keysHtml = '';
+            currentQuestion.correct_answers.forEach((k, idx) => {
+                keysHtml += `<div>满分解法 ${idx + 1}: ${k}</div>`;
+            });
+            keysRender.innerHTML = keysHtml;
+            hookNode.innerHTML = `<i class="fa-solid fa-key"></i> <strong>揉碎合并口诀：</strong>${currentQuestion.hook}`;
+
+            analysisContainer.style.display = 'block';
+        };
+
+        // 步骤 2：用户自评交互控制逻辑
+        function handleSelfEvaluation(remembered) {
+            if (hasEvaluated) return;
+            hasEvaluated = true;
+
+            // 锁定并记录进度到主盘覆盖率
+            StorageEngine.saveProgress('sc', currentQuestion.id);
+
+            btnRemember.classList.add('disabled');
+            btnForgot.classList.add('disabled');
+
+            if (remembered) {
+                // 如果构思正确，点击记得，卡片高亮绿色通过
+                btnRemember.classList.add('active-choice');
+            } else {
+                // 如果不记得或构思有误，点击不记得，高亮红色，并全自动记入本地错题册！
+                btnForgot.classList.add('active-choice');
+                StorageEngine.addMistake('sc', currentQuestion);
+            }
+
+            btnNext.style.visibility = 'visible';
+        }
+
+        btnRemember.onclick = () => handleSelfEvaluation(true);
+        btnForgot.onclick = () => handleSelfEvaluation(false);
+
+        btnNext.onclick = () => {
+            currentIndex++;
+            if (currentIndex < totalQuestions) {
+                loadQuestion();
+            } else {
+                alert('恭喜你！通关了课内全部句子合并默写背诵舱！');
+                window.location.href = '../index.html';
+            }
+        };
+
+        window.onload = loadQuestion;
+    </script>
+</body>
+</html>
