@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>模块 I：单选练习舱</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .exercise-container { max-width: 800px; margin: 40px auto; padding: 0 20px; }
+        .back-nav { margin-bottom: 20px; }
+        .back-link { text-decoration: none; color: var(--color-blue); font-weight: 600; display: inline-flex; align-items: center; gap: 5px; }
+        .question-box { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 30px; box-shadow: var(--shadow-sm); }
+        .q-header { display: flex; justify-content: space-between; color: var(--text-muted); font-size: 0.85rem; margin-bottom: 15px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; }
+        .q-text { font-size: 1.25rem; font-weight: 700; color: var(--text-main); margin-bottom: 25px; line-height: 1.5; }
+        .options-list { display: flex; flex-direction: column; gap: 12px; }
+        .option-item { background: var(--bg-main); border: 1px solid var(--border-color); padding: 15px 20px; border-radius: 8px; cursor: pointer; transition: var(--transition); display: flex; justify-content: space-between; align-items: center; font-weight: 500; }
+        .option-item:hover { border-color: #94a3b8; background: #f1f5f9; }
+
+        .option-item.correct { background-color: var(--color-green-light) !important; border-color: var(--color-green) !important; color: var(--color-green) !important; }
+        .option-item.wrong { background-color: var(--color-red-light) !important; border-color: var(--color-red) !important; color: var(--color-red) !important; }
+        .option-item.disabled { pointer-events: none; }
+
+        .analysis-box { margin-top: 30px; background: #f8fafc; border-left: 4px solid var(--color-blue); padding: 20px; border-radius: 4px; display: none; }
+        .analysis-box h5 { color: var(--color-blue); font-size: 0.95rem; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+        .analysis-box p { font-size: 0.9rem; color: #334155; margin-bottom: 12px; line-height: 1.5; }
+        .analysis-box .hook-text { background: var(--color-orange-light); color: var(--color-orange); padding: 8px 12px; border-radius: 6px; font-weight: 600; font-size: 0.88rem; border: 1px dashed #fdba74; }
+
+        .action-bar { margin-top: 25px; display: flex; justify-content: space-between; }
+        .action-btn { padding: 10px 20px; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: var(--transition); background: #e2e8f0; color: var(--text-main); }
+        .action-btn:hover { background: #cbd5e1; }
+        .btn-next { background: var(--color-blue); color: #fff; }
+        .btn-next:hover { background: #0369a1; }
+    </style>
+</head>
+<body>
+
+    <div class="exercise-container">
+        <div class="back-nav">
+            <a href="../index.html" class="back-link"><i class="fa-solid fa-chevron-left"></i> 返回主控大盘</a>
+        </div>
+
+        <div class="question-box">
+            <div class="q-header">
+                <span id="q-tag"><i class="fa-solid fa-tags"></i> 考点加载中...</span>
+                <span id="q-index">题目 0 / 0</span>
+            </div>
+
+            <!-- 此时界面只有纯英文，没有任何中文暗示 -->
+            <div class="q-text" id="q-text">Loading question...</div>
+
+            <div class="options-list" id="options-container"></div>
+
+            <!-- 选择完毕后才弹出的解析框（含题干翻译与选项翻译） -->
+            <div class="analysis-box" id="analysis-container">
+                <h5><i class="fa-solid fa-wand-magic-sparkles"></i> 核心考点与全双语翻译</h5>
+                <p id="analysis-q-zh"></p>
+                <p id="analysis-opts-zh" style="border-top: 1px dashed var(--border-color); padding-top: 10px;"></p>
+                <div class="hook-text" id="analysis-hook"></div>
+            </div>
+
+            <div class="action-bar">
+                <button class="action-btn" id="btn-star"><i class="fa-regular fa-star"></i> 手动收藏</button>
+                <button class="action-btn btn-next" id="btn-next" style="visibility: hidden;">下一题 <i class="fa-solid fa-chevron-right"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/question-bank.js"></script>
+    <script src="../js/storage.js"></script>
+    <script>
+        let currentIndex = 0;
+        let currentQuestion = null;
+        let hasAnswered = false;
+        const totalQuestions = multipleChoiceQuestions.length;
+
+        const tagNode = document.getElementById('q-tag');
+        const indexNode = document.getElementById('q-index');
+        const textNode = document.getElementById('q-text');
+        const optionsContainer = document.getElementById('options-container');
+        const analysisContainer = document.getElementById('analysis-container');
+        const qZhNode = document.getElementById('analysis-q-zh');
+        const optsZhNode = document.getElementById('analysis-opts-zh');
+        const hookNode = document.getElementById('analysis-hook');
+        const btnNext = document.getElementById('btn-next');
+        const btnStar = document.getElementById('btn-star');
+
+        function loadQuestion() {
+            hasAnswered = false;
+            btnNext.style.visibility = 'hidden';
+            analysisContainer.style.display = 'none';
+            btnStar.className = 'action-btn';
+            btnStar.innerHTML = '<i class="fa-regular fa-star"></i> 手动收藏';
+
+            currentQuestion = multipleChoiceQuestions[currentIndex];
+            tagNode.innerHTML = `<i class="fa-solid fa-tags"></i> ${currentQuestion.tag}`;
+            indexNode.textContent = `题目 ${currentIndex + 1} / ${totalQuestions}`;
+            textNode.textContent = currentQuestion.question;
+
+            let shuffledOptions = [...currentQuestion.options];
+            for (let i = shuffledOptions.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffledOptions[i], shuffledOptions[j]] = [shuffledOptions[j], shuffledOptions[i]];
+            }
+
+            optionsContainer.innerHTML = '';
+            shuffledOptions.forEach(opt => {
+                const optDiv = document.createElement('div');
+                optDiv.className = 'option-item';
+                // 刷题中只展示纯英文选项
+                optDiv.innerHTML = `<span>${opt.text}</span> <i class="fa-regular fa-circle"></i>`;
+                optDiv.onclick = () => handleSelect(opt, optDiv);
+                optionsContainer.appendChild(optDiv);
+            });
+        }
+
+        function handleSelect(selectedOpt, selectedDiv) {
+            if (hasAnswered) return;
+            hasAnswered = true;
+
+            StorageEngine.saveProgress('mc', currentQuestion.id);
+            const allOptionDivs = optionsContainer.querySelectorAll('.option-item');
+
+            allOptionDivs.forEach(div => {
+                div.classList.add('disabled');
+                const optText = div.querySelector('span').textContent.trim();
+                const originalOpt = currentQuestion.options.find(o => o.text === optText);
+
+                if (originalOpt && originalOpt.isCorrect) {
+                    div.classList.add('correct');
+                    div.querySelector('i').className = 'fa-solid fa-circle-check';
+                }
+            });
+
+            if (!selectedOpt.isCorrect) {
+                selectedDiv.classList.add('wrong');
+                selectedDiv.querySelector('i').className = 'fa-solid fa-circle-xmark';
+                StorageEngine.addMistake('mc', currentQuestion);
+            }
+
+            // 选择完毕，在这里将隐藏的“题目翻译”与“所有选项翻译”统一亮出
+            qZhNode.innerHTML = `<strong>题干翻译：</strong>${currentQuestion.question_zh}`;
+
+            let optsTranslationHtml = `<strong>选项翻译：</strong><br>`;
+            currentQuestion.options.forEach(o => {
+                optsTranslationHtml += `• ${o.text} ➔ <span style="color:var(--text-muted);">${o.text_zh}</span><br>`;
+            });
+            optsZhNode.innerHTML = optsTranslationHtml;
+
+            hookNode.innerHTML = `<i class="fa-solid fa-key"></i> <strong>秒杀逻辑：</strong>${currentQuestion.hook}`;
+            analysisContainer.style.display = 'block';
+            btnNext.style.visibility = 'visible';
+        }
+
+        btnStar.onclick = () => {
+            StorageEngine.addMistake('mc', currentQuestion);
+            btnStar.className = 'action-btn btn-orange';
+            btnStar.innerHTML = '<i class="fa-solid fa-star"></i> 已加入错题册';
+        };
+
+        btnNext.onclick = () => {
+            currentIndex++;
+            if (currentIndex < totalQuestions) {
+                loadQuestion();
+            } else {
+                alert('恭喜你，攻克了课内全部单选题专项练习！');
+                window.location.href = '../index.html';
+            }
+        };
+
+        window.onload = loadQuestion;
+    </script>
+</body>
+</html>
