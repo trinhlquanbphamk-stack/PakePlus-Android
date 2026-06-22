@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>大学英语IV（写作）期末智能化刷题系统</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+    <header class="app-header">
+        <div class="header-container">
+            <div class="logo">
+                <i class="fa-solid fa-graduation-cap"></i>
+                <span>English IV 写作备考系统</span>
+            </div>
+            <div class="current-date">
+                <i class="fa-regular fa-clock"></i>
+                <span id="live-clock">2026大学英语IV期末冲刺</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-container">
+
+        <section class="left-panel">
+
+            <div class="dashboard-card overview-card">
+                <div class="card-header">
+                    <h2><i class="fa-solid fa-chart-pie"></i> 期末考试大纲与分值看板</h2>
+                </div>
+                <div class="syllabus-grid">
+                    <div class="syllabus-item">
+                        <span class="type-title">I. 单项选择题</span>
+                        <span class="score-tag">25分 / 25题</span>
+                        <p class="scope-text">20题课内精选 + 5题课外 (选项打乱)</p>
+                    </div>
+                    <div class="syllabus-item">
+                        <span class="type-title">II. 正误判断题</span>
+                        <span class="score-tag">20分 / 20题</span>
+                        <p class="scope-text">15题课内 + 5题课外 (T:A / F:B)</p>
+                    </div>
+                    <div class="syllabus-item">
+                        <span class="type-title">III. 句子合并题</span>
+                        <span class="score-tag">15分 / 15题</span>
+                        <p class="scope-text">10题课内 + 5题课外 (改为选择题形式)</p>
+                    </div>
+                    <div class="syllabus-item highlight">
+                        <span class="type-title">IV. 实用写作 (Practical)</span>
+                        <span class="score-tag">15分 / 1题</span>
+                        <p class="scope-text">全课外：公文/商务书信/备忘录</p>
+                    </div>
+                    <div class="syllabus-item highlight">
+                        <span class="type-title">V. 篇章写作 (Writing)</span>
+                        <span class="score-tag">25分 / 1题</span>
+                        <p class="scope-text">全课外：250字以上学术议论文</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="module-section-title">
+                <h3><i class="fa-solid fa-cubes"></i> 智能化通关核心模块</h3>
+            </div>
+
+            <div class="modules-grid">
+                <div class="module-card">
+                    <div class="module-icon icon-blue">
+                        <i class="fa-solid fa-list-check"></i>
+                    </div>
+                    <div class="module-info">
+                        <h4>模块 I：单选练习舱</h4>
+                        <p>全量收录课内60道核心选择题。支持**选项动态打乱**，彻底破除死记硬背选项字母的误区。</p>
+                        <div class="progress-wrapper">
+                            <span class="progress-label">复习覆盖率: <strong id="mc-progress-text">0%</strong></span>
+                            <div class="progress-bar"><div class="progress-inner bg-blue" id="mc-progress-bar" style="width: 0%"></div></div>
+                        </div>
+                    </div>
+                    <a href="modules/multiple-choice.html" class="enter-btn btn-blue">进入练习 <i class="fa-solid fa-arrow-right"></i></a>
+                </div>
+
+                <div class="module-card">
+                    <div class="module-icon icon-green">
+                        <i class="fa-solid fa-circle-check"></i>
+                    </div>
+                    <div class="module-info">
+                        <h4>模块 II：判断正误舱</h4>
+                        <p>涵盖词汇、句子、篇章45道判断题。作答时同步**映射考场机读卡A/B涂卡规则**，固化肌肉记忆。</p>
+                        <div class="progress-wrapper">
+                            <span class="progress-label">复习覆盖率: <strong id="tf-progress-text">0%</strong></span>
+                            <div class="progress-bar"><div class="progress-inner bg-green" id="tf-progress-bar" style="width: 0%"></div></div>
+                        </div>
+                    </div>
+                    <a href="modules/true-false.html" class="enter-btn btn-green">进入练习 <i class="fa-solid fa-arrow-right"></i></a>
+                </div>
+
+                <div class="module-card">
+                    <div class="module-icon icon-orange">
+                        <i class="fa-solid fa-code-merge"></i>
+                    </div>
+                    <div class="module-info">
+                        <h4>模块 III：句子合并舱</h4>
+                        <p>针对考试**最新选择题化变型**。高仿真混淆干扰项，支持官方多解答案同时并行渲染输出。</p>
+                        <div class="progress-wrapper">
+                            <span class="progress-label">复习覆盖率: <strong id="sc-progress-text">0%</strong></span>
+                            <div class="progress-bar"><div class="progress-inner bg-orange" id="sc-progress-bar" style="width: 0%"></div></div>
+                        </div>
+                    </div>
+                    <a href="modules/sentence-combine.html" class="enter-btn btn-orange">进入练习 <i class="fa-solid fa-arrow-right"></i></a>
+                </div>
+
+                <div class="module-card mistake-card">
+                    <div class="module-icon icon-red">
+                        <i class="fa-solid fa-book-skull"></i>
+                    </div>
+                    <div class="module-info">
+                        <h4>错题本与智能斩杀中心</h4>
+                        <p>跨模块全自动收集所有错题，按错误频次进行“三色遗忘分级”。支持**连续答对2次自动销题算法**。</p>
+                        <div class="mistake-badge-container">
+                            <span class="mistake-tag tag-red">顽固错题: <strong id="stubborn-count">0</strong></span>
+                            <span class="mistake-tag tag-orange">重度错题: <strong id="severe-count">0</strong></span>
+                        </div>
+                    </div>
+                    <a href="modules/mistake-collection.html" class="enter-btn btn-red">斩杀错题 <i class="fa-solid fa-fire"></i></a>
+                </div>
+            </div>
+
+        </section>
+
+        <aside class="right-panel">
+            <div class="memo-card">
+                <div class="memo-header">
+                    <h3><i class="fa-solid fa-bookmark"></i> 课外主观题 · 黄金备忘录</h3>
+                    <p>利用刷题间隙，死记硬背建立模板层面的肌肉记忆</p>
+                </div>
+
+                <div class="memo-content">
+                    <div class="memo-block">
+                        <h4 class="memo-title-tag tag-practical"><i class="fa-solid fa-pen-to-square"></i> IV. Practical Writing (15分)</h4>
+                        <div class="memo-item-box">
+                            <h5>📢 商务便签/备忘录 (Memo) 核心框架</h5>
+                            <div class="code-like-box">
+                                <strong>MEMORANDUM</strong><br>
+                                <strong>TO:</strong> [收件人职位/姓名]<br>
+                                <strong>FROM:</strong> [发件人职位/姓名]<br>
+                                <strong>DATE:</strong> June 22, 2026<br>
+                                <strong>SUBJECT:</strong> [事由，要具体且简明，避免冗余词]
+                            </div>
+                            <p class="memo-tip"><i class="fa-solid fa-lightbulb"></i> <strong>注意：</strong>便签语言通常简练直接。Greeting称呼不认识的人用 <em>Dear Sir/Madame</em>，认识则用 <em>Dear Mr. Wang</em> [cite: 49]。</p>
+                        </div>
+                    </div>
+
+                    <div class="memo-block">
+                        <h4 class="memo-title-tag tag-essay"><i class="fa-solid fa-feather"></i> V. Academic Writing (25分)</h4>
+                        <div class="memo-item-box">
+                            <h5>✍️ 250字议论文高分 Thesis Statement 黄金句型</h5>
+                            <ul>
+                                <li><strong>引出分论点句型（因果有态度）：</strong><br><em>...is harmful/beneficial because it creates A, discourages B, and presents C.</em> [cite: 13]</li>
+                                <li><strong>客观论据组织（拒绝主观修辞）：</strong><br>多用确凿的数字与度量衡事实（如 <em>The 19-year-old boy was 1.85 meters tall...</em>） [cite: 56]。</li>
+                                <li><strong>结尾收尾铁律：</strong><br>总结主要观点或发出呼吁，<strong>绝对不要引入任何新例子（a further example）</strong> [cite: 15]。</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+    </main>
+
+    <footer class="app-footer">
+        <p>大学英语IV（写作）期末智能化刷题系统 · 纯前端零依赖解压即用版</p>
+        <p class="footer-sub">设计理念：数据驱动 / 选项乱序 / 错题追踪算法</p>
+    </footer>
+
+</body>
+</html>
